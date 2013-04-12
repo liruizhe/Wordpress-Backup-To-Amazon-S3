@@ -5,6 +5,7 @@ PREFIX="wpbackup"
 
 # Settings for wordpress
 WP_HOME=""
+MYSQL_HOST=""
 MYSQL_DBNAME=""
 MYSQL_USER=""
 MYSQL_PASS=""
@@ -19,17 +20,17 @@ BACKUP_LIMIT=15
 tempdir=$(mktemp -d)
 
 # Dump MySQL databse
-mysqldump "$MYSQL_DBNAME" --add-drop-database -l -u"$MYSQL_USER" -p"$MYSQL_PASS"|gzip > $tempdir/database.sql.gz
+mysqldump "$MYSQL_DBNAME" --add-drop-database -l -h"$MYSQL_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASS"|gzip > $tempdir/database.sql.gz
 
 # Backup wordpress settings & files
 cwd="$PWD"
 cd "$WP_HOME"
-tar czf $tempdir/wordpress.tar.gz wp-admin wp-content wp-includes wp-config.php
+zip -r $tempdir/wordpress.zip wp-admin wp-content wp-includes wp-config.php
 
 # tar all files
 cd $tempdir
 packagefile="$PREFIX-$(date +%Y-%m-%d_%H.%M.%S.%Z).tar"
-tar cf "$packagefile" database.sql.gz wordpress.tar.gz database.sql.gz
+tar cf "$packagefile" database.sql.gz wordpress.zip
 
 # backup file to Amazon S3
 if ! s3cmd info s3://$BUCKET|grep "s3://"; then
